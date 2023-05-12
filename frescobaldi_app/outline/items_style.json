@@ -1,0 +1,68 @@
+{
+  "score": {
+    "bold": false,
+    "fa-icon": "fa5s.music",
+    "display-value": "Score",
+    "icon-color": "#c77dbb"
+  },
+  "header": {
+    "fa-icon": "fa5s.heading",
+    "display-value": "Header",
+    "icon-color": "#cf8e6d"
+  },
+  "layout": {
+    "fa-icon": "fa5s.map",
+    "display-value": "Layout",
+    "icon-color": "#57aaf7"
+  },
+  "paper": {
+    "fa-icon": "fa5s.scroll",
+    "display-value": "Paper",
+    "icon-color": "#2aacb8"
+  },
+  "book": {
+    "fa-icon": "fa5s.book"
+  },
+  "figures": {
+    "fa-icon": "fa5s.code"
+  },
+  "ctx": {
+    "fa-icon": "fa5s.archive"
+  },
+  "relative": {
+    "fa-icon": "fa5s.pen"
+  },
+  "mark": {
+    "fa-icon": "fa5s.highlighter",
+    "icon-color": "#d8bfd8",
+    "text-color": "#808080",
+    "italic": true
+  },
+  "staff": {
+    "fa-icon": "fa5s.bars",
+    "icon-color": "#deb887"
+  },
+  "lyric": {
+    "italic": true,
+    "fa-icon": "fa5s.feather-alt",
+    "icon-color": "#8fbc8f"
+  },
+  "scm": {
+    "fa-icon": "fa5s.hashtag",
+    "icon-color": "#bc8f8f"
+  },
+  "markup": {
+    "fa-icon": "fa5s.align-left",
+    "icon-color": "#f4a460"
+  },
+  "declaration": {
+    "fa-icon": "fa5s.paperclip",
+    "underline": true
+  },
+  "alert": {
+    "underline": true,
+    "icon-color": "#ffa500",
+    "text-color": "#cd4b58",
+    "fa-icon": "fa5s.exclamation-circle"
+  }
+}

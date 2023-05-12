@@ -21,9 +21,8 @@
 The document outline tool widget.
 """
 
-
 from PyQt5.QtCore import QEvent, QTimer
-from PyQt5.QtGui import QBrush, QFont, QTextCursor
+from PyQt5.QtGui import QBrush, QFont, QTextCursor, QColor
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
 
 import app
@@ -32,11 +31,12 @@ import cursortools
 import tokeniter
 import documentstructure
 
+import qtawesome as qta
+
 
 class Widget(QTreeWidget):
     def __init__(self, tool):
-        super(Widget, self).__init__(tool,
-            headerHidden=True)
+        super(Widget, self).__init__(tool, headerHidden=True)
         self._timer = QTimer(singleShot=True, timeout=self.updateView)
         tool.mainwindow().currentDocumentChanged.connect(self.slotCurrentDocumentChanged)
         self.itemClicked.connect(self.slotItemClicked)
@@ -70,15 +70,18 @@ class Widget(QTreeWidget):
             doc = self.parent().mainwindow().currentDocument()
             if not doc:
                 return
+
             view_cursor_position = self.parent().mainwindow().textCursor().position()
             structure = documentstructure.DocumentStructure.instance(doc)
             last_item = None
             current_item = None
             last_block = None
-            for i in structure.outline():
-                position = i.start()
+
+            for outline_item in structure.outline():
+                position = outline_item.start()
                 block = doc.findBlock(position)
                 depth = tokeniter.state(block).depth()
+
                 if block == last_block:
                     parent = last_item
                 elif last_block is None or depth == 1:
@@ -110,27 +113,46 @@ class Widget(QTreeWidget):
                 item = last_item = QTreeWidgetItem(parent)
 
                 # set item text and display style bold if 'title' was used
-                for name, text in i.groupdict().items():
+                for name, text in outline_item.groupdict().items():
                     if text:
-                        if name.startswith('title'):
-                            font = item.font(0)
-                            font.setWeight(QFont.Bold)
-                            item.setFont(0, font)
+                        if name.startswith("new"):
+                            if 'Staff' in text:
+                                name = 'staff'
+                                text = 'Staff'
+                            style_item(item, name, text)
+                            break
+                        elif name.startswith("decl"):
+                            declaration = block.text()[len(text):].lstrip()
+
+                            if declaration.startswith(r'\lyr'):
+                                name = 'lyric'
+                            elif declaration.startswith(r'\markup'):
+                                name = 'markup'
+                            elif declaration.startswith(r'#('):
+                                name = 'scm'
+                            elif declaration.startswith(r'\fig'):
+                                name = 'figures'
+                            elif declaration.startswith(r'\rel'):
+                                name = 'relative'
+                            else:
+                                name = 'declaration'
+
+                            text = text[:-1]  # remove equals sign
+                            style_item(item, name, text)
                             break
                         elif name.startswith('alert'):
-                            color = item.foreground(0).color()
-                            color = qutil.addcolor(color, 128, 0, 0)
-                            item.setForeground(0, QBrush(color))
-                            font = item.font(0)
-                            font.setStyle(QFont.StyleItalic)
-                            item.setFont(0, font)
-                        elif name.startswith('text'):
+                            text = outline_item.group('id') + " [" + outline_item.group('caption')[1:] + "]"
+                            style_item(item, name, text)
                             break
-                else:
-                    text = i.group()
-                item.setText(0, text)
+                        else:
+                            style_item(item, name, text)
+                            break
+                    else:
+                        text = outline_item.group()
 
-                # remember whether is was collapsed by the user
+                    # item.setText(0, text)
+
+                # remember whether it was collapsed by the user
                 try:
                     collapsed = block.userData().collapsed
                 except AttributeError:
@@ -194,3 +216,61 @@ class Widget(QTreeWidget):
         documenttooltip.show(self.cursorForItem(item))
 
 
+from . import _outline_styles
+
+_qta_cache = {}
+_color_cache = {}
+
+
+def cached_value(cache, key, supplier):
+    """
+    Return the value associated to the key in the dictionary, if present, else calculate the value through the supplier
+    function and store the value in the cache.
+    :param cache: A dictionary
+    :param key:
+    :param supplier: A function that supply a value for a given key
+    :return:
+    """
+    if key in cache.keys():
+        return cache[key]
+    else:
+        value = supplier(key)
+        cache[key] = value
+        return value
+
+
+def color(style):
+    return QBrush(QColor(style[TEXT_COLOR]))
+
+
+def style_item(tree_item: QTreeWidgetItem, name, text):
+    try:
+        style = _outline_styles[name]
+    except KeyError:
+        style = _outline_styles['default']
+
+    font: QFont = tree_item.font(0)
+    font.setBold(style[BOLD])
+    font.setItalic(style[ITALIC])
+    font.setUnderline(style[UNDERLINE])
+    tree_item.setFont(0, font)
+    tree_item.setForeground(0, cached_value(_color_cache, name, lambda key: color(style)))  # text color
+    tree_item.setText(0, style[DISPLAY_VALUE] if style[DISPLAY_VALUE] else text)
+
+    # TODO cache
+    if style[FA_ICON]:
+        if name in _qta_cache.keys():
+            tree_item.setIcon(0, _qta_cache[name])
+        else:
+            icon = qta.icon(style[FA_ICON], color=style[ICON_COLOR])
+            tree_item.setIcon(0, icon)
+            _qta_cache[name] = icon
+
+
+BOLD = 'bold'
+ITALIC = 'italic'
+UNDERLINE = 'underline'
+DISPLAY_VALUE = 'display-value'
+ICON_COLOR = 'icon-color'
+FA_ICON = 'fa-icon'
+TEXT_COLOR = 'text-color'

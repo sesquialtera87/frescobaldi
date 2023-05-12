@@ -21,7 +21,6 @@
 The document outline tool.
 """
 
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
 
@@ -45,3 +44,26 @@ class OutlinePanel(panel.Panel):
         return w
 
 
+def loadStyles():
+    import json, os
+    from copy import deepcopy
+    outline_styles = {}
+    path = os.path.join(__path__[0], 'items_style.json')
+    f = open(path, 'r')
+    styles = json.load(f)
+    f.close()
+
+    default = {'bold': False, 'italic': False, 'underline': False, 'text-color': 'black', 'icon-color': '#808080',
+               'fa-icon': None, 'display-value': None}
+    outline_styles['default'] = default
+
+    for name in styles.keys():
+        outline_styles[name] = deepcopy(default)
+
+        for key in styles[name]:
+            outline_styles[name][key] = styles[name][key]
+
+    return outline_styles
+
+
+_outline_styles = loadStyles()
