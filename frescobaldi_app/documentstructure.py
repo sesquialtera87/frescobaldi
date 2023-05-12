@@ -21,7 +21,6 @@
 Maintains an overview of the structure of a Document.
 """
 
-
 import re
 
 from PyQt5.QtCore import QSettings
@@ -34,21 +33,24 @@ import ly.document
 
 # default outline patterns that are ignored in comments
 default_outline_patterns = [
-r"(?P<title>\\(score|book|bookpart))\b",
-r"^\\(paper|layout|header)\b",
-r"\\(new|context)\s+[A-Z]\w+",
-r"^[a-zA-Z]+\s*=",
-r"^<<",
-r"^\{",
-r"^\\relative([ \t]+\w+[',]*)?",
+    r"\\(?P<score>score)\b",
+    r"\\(?P<book>(book|bookpart))\b",
+    r"\\(?P<header>header)\b",
+    r"\\(?P<layout>layout)\b",
+    r"(?P<paper>\\paper)\b",
+    r"(?P<new>\\new\s+[A-Z]\w+)",
+    r"\\(?P<ctx>context)\s+[A-Z]\w+",
+    r"(?P<decl>^[a-zA-Z]+\s*=)",
+    r"^<<",
+    r"^\{",
+    r"^(?P<rel>\\relative([ \t]+\w+[',]*)?)",
 ]
 
 # default outline patterns that are matched also in comments
 default_outline_patterns_comments = [
-r"(?P<title>BEGIN[^\n]*)[ \t]*$",
-r"\b(?P<alert>(FIXME|HACK|XXX+)\b\W*\w+)",
+    r"(?P<mark>BEGIN[^\n]*)[ \t]*$",
+    r"\b(?P<alert>(?P<id>TODO|FIXME|HACK|XXX+)\b(?P<caption>\W*\w+))",
 ]
-
 
 # cache the outline regexp
 _outline_re = None
@@ -59,10 +61,11 @@ def outline_re(comments):
     """Return the expression to look for document outline items.
     If comments is True it is used to search in the whole document,
     if it is False comments are excluded."""
-    v = '_outline_re'+('_comments' if comments else '')
+    v = '_outline_re' + ('_comments' if comments else '')
     if globals()[v] is None:
         globals()[v] = create_outline_re(comments)
     return globals()[v]
+
 
 def _reset_outline_re():
     global _outline_re
@@ -84,7 +87,7 @@ def create_outline_re(comments):
                                    default_outline_patterns_comments, str)
         else:
             rx = QSettings().value("documentstructure/outline_patterns",
-                                default_outline_patterns, str)
+                                   default_outline_patterns, str)
     except TypeError:
         rx = []
     # suffix duplicate named groups with a number
@@ -135,6 +138,7 @@ class DocumentStructure(plugin.DocumentPlugin):
 
     def remove_comments(self):
         """Remove Lilypond comments from text"""
+
         def whiteout_section(cursor, start, end):
             spaces = ''.join(' ' for x in range(start, end))
             with cursor.document as doc:
@@ -154,4 +158,3 @@ class DocumentStructure(plugin.DocumentPlugin):
             elif isinstance(token, ly.lex.Comment):
                 whiteout_section(cursor, token.pos, token.end)
         return cursor.document.plaintext()
-
