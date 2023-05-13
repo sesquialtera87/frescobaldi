@@ -21,9 +21,9 @@
 The document outline tool widget.
 """
 
-from PyQt5.QtCore import QEvent, QTimer
-from PyQt5.QtGui import QBrush, QFont, QTextCursor, QColor
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
+from PyQt5.QtCore import QEvent, QTimer, Qt
+from PyQt5.QtGui import QBrush, QFont, QTextCursor, QColor, QContextMenuEvent
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
 
 import app
 import qutil
@@ -32,6 +32,28 @@ import tokeniter
 import documentstructure
 
 import qtawesome as qta
+
+
+class OutlineItem(QTreeWidgetItem):
+    SORT_BY_STRUCTURE = 0
+    SORT_BY_TYPE = 1
+    sortBy = SORT_BY_STRUCTURE
+
+    def __init__(self, *__args):
+        super().__init__(*__args)
+        self.position: int = -1
+        self.depth = None
+        self.outline_type = None
+
+    def __lt__(self, other):
+        # override to handle custom sort behaviour
+        try:
+            if OutlineItem.sortBy == OutlineItem.SORT_BY_STRUCTURE:
+                return self.position.__lt__(other.position)
+            else:
+                return self.outline_type.__lt__(other.outline_type)
+        except Exception:
+            super().__lt__(self, other)
 
 
 class Widget(QTreeWidget):
@@ -47,6 +69,38 @@ class Widget(QTreeWidget):
         doc = tool.mainwindow().currentDocument()
         if doc:
             self.slotCurrentDocumentChanged(doc)
+
+    # noinspection PyPep8Naming
+    def contextMenuEvent(self, evt: QContextMenuEvent, **kwargs):
+        super().contextMenuEvent(evt, **kwargs)
+
+        sortByType = QAction()
+        sortByType.setText("Sort by item type")
+        sortByType.setDisabled(self.topLevelItemCount() == 0)
+        sortByType.triggered.connect(lambda x: self.slot_sort(OutlineItem.SORT_BY_TYPE))
+
+        sortByDocument = QAction()
+        sortByDocument.setText("Sort by structure")
+        sortByDocument.setDisabled(self.topLevelItemCount() == 0)
+        sortByDocument.triggered.connect(self.slot_sort)
+
+        collapseAll = QAction()
+        collapseAll.setText("Collapse all")
+        collapseAll.setDisabled(self.topLevelItemCount() == 0)
+        collapseAll.triggered.connect(self.collapseAll)
+
+        expandAll = QAction()
+        expandAll.setText("Expand all")
+        expandAll.setDisabled(self.topLevelItemCount() == 0)
+        expandAll.triggered.connect(self.expandAll)
+
+        menu = QMenu()
+        menu.addActions([sortByDocument, sortByType, collapseAll, expandAll])
+        menu.exec(evt.globalPos())
+
+    def slot_sort(self, sort_by=OutlineItem.SORT_BY_STRUCTURE):
+        OutlineItem.sortBy = sort_by
+        self.sortByColumn(0, Qt.AscendingOrder)
 
     def slotCurrentDocumentChanged(self, doc, old=None):
         """Called whenever the mainwindow changes the current document."""
@@ -110,7 +164,7 @@ class Widget(QTreeWidget):
                         else:
                             parent = last_item
 
-                item = last_item = QTreeWidgetItem(parent)
+                item = last_item = OutlineItem(parent)
 
                 # set item text and display style bold if 'title' was used
                 for name, text in outline_item.groupdict().items():
@@ -256,6 +310,7 @@ def style_item(tree_item: QTreeWidgetItem, name, text):
     tree_item.setFont(0, font)
     tree_item.setForeground(0, cached_value(_color_cache, name, lambda key: color(style)))  # text color
     tree_item.setText(0, style[DISPLAY_VALUE] if style[DISPLAY_VALUE] else text)
+    tree_item.outline_type = name
 
     # TODO cache
     if style[FA_ICON]:
