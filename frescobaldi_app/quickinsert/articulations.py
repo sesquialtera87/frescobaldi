@@ -21,7 +21,6 @@
 The Quick Insert panel Articulations Tool.
 """
 
-
 import itertools
 
 from PyQt5.QtGui import QTextCursor
@@ -41,13 +40,12 @@ import documentactions
 from . import tool
 from . import buttongroup
 
-
 # a dict mapping long articulation names to their short sign
 shorthands = {
     'marcato': '^',
     'stopped': '+',
     'tenuto': '-',
-    'staccatissimo': '|', # in Lily >= 2.17.25 this changed to '!', handled below
+    'staccatissimo': '|',  # in Lily >= 2.17.25 this changed to '!', handled below
     'accent': '>',
     'staccato': '.',
     'portato': '_',
@@ -58,14 +56,15 @@ class Articulations(tool.Tool):
     """Articulations tool in the quick insert panel toolbox.
 
     """
+
     def __init__(self, panel):
         super(Articulations, self).__init__(panel)
         self.shorthands = QCheckBox(self)
         self.shorthands.setChecked(True)
         self.removemenu = QToolButton(self,
-            autoRaise=True,
-            popupMode=QToolButton.InstantPopup,
-            icon=icons.get('edit-clear'))
+                                      autoRaise=True,
+                                      popupMode=QToolButton.InstantPopup,
+                                      icon=icons.get('edit-clear'))
 
         mainwindow = panel.parent().mainwindow()
         mainwindow.selectionStateChanged.connect(self.removemenu.setEnabled)
@@ -87,7 +86,8 @@ class Articulations(tool.Tool):
                 OrnamentsGroup,
                 SignsGroup,
                 OtherGroup,
-            ):
+                TremolosGroups
+        ):
             self.layout().addWidget(cls(self))
         self.layout().addStretch(1)
         app.translateUI(self)
@@ -115,7 +115,7 @@ class Articulations(tool.Tool):
 class Group(buttongroup.ButtonGroup):
     def actionData(self):
         for name, title in self.actionTexts():
-            yield name, symbols.icon('articulation_'+name), None
+            yield name, symbols.icon('articulation_' + name), None
 
     def actionTriggered(self, name):
         if self.tool().shorthands.isChecked() and name in shorthands:
@@ -125,9 +125,9 @@ class Group(buttongroup.ButtonGroup):
                 version = documentinfo.docinfo(self.mainwindow().currentDocument()).version()
                 if version >= (2, 17, 25):
                     short = '!'
-            text = '_-^'[self.direction()+1] + short
+            text = '_-^'[self.direction() + 1] + short
         else:
-            text = ('_', '', '^')[self.direction()+1] + '\\' + name
+            text = ('_', '', '^')[self.direction() + 1] + '\\' + name
         cursor = self.mainwindow().textCursor()
         selection = cursor.hasSelection()
         cursors = articulation_positions(cursor)
@@ -210,6 +210,18 @@ class OtherGroup(Group):
         yield 'halfopen', _("Half open (e.g. hi-hat)")
 
 
+class TremolosGroups(Group):
+
+    def translateUI(self):
+        self.setTitle("Tremolos")
+        pass
+
+    def actionTexts(self):
+        yield 'tremolo_simple', 'Simple tremolo'
+        yield 'tremolo_double', 'Double tremolo'
+        yield 'tremolo_triple', 'Triple tremolo'
+
+
 def articulation_positions(cursor):
     """Returns a list of positions where an articulation can be added.
 
@@ -235,7 +247,5 @@ def articulation_positions(cursor):
         csr.setPosition(item.end)
         positions.append(csr)
         if not cursor.hasSelection():
-            break # leave if first found, that's enough
+            break  # leave if first found, that's enough
     return positions
-
-
