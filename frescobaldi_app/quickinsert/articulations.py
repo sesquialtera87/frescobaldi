@@ -21,8 +21,7 @@
 The Quick Insert panel Articulations Tool.
 """
 
-import itertools
-
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QToolButton
 
@@ -41,7 +40,7 @@ from . import tool
 from . import buttongroup
 
 # a dict mapping long articulation names to their short sign
-shorthands = {
+_shorthands = {
     'marcato': '^',
     'stopped': '+',
     'tenuto': '-',
@@ -49,6 +48,12 @@ shorthands = {
     'accent': '>',
     'staccato': '.',
     'portato': '_',
+}
+
+_tremolos = {
+    'simple': ':8',
+    'double': ':16',
+    'triple': ':32'
 }
 
 
@@ -76,8 +81,8 @@ class Articulations(tool.Tool):
         self.removemenu.addAction(ac.tools_quick_remove_instrument_scripts)
 
         layout = QHBoxLayout()
-        layout.addWidget(self.shorthands)
-        layout.addWidget(self.removemenu)
+        layout.addWidget(self.shorthands, alignment=Qt.AlignLeft)
+        layout.addWidget(self.removemenu, alignment=Qt.AlignLeft)
         layout.addStretch(1)
 
         self.layout().addLayout(layout)
@@ -118,8 +123,10 @@ class Group(buttongroup.ButtonGroup):
             yield name, symbols.icon('articulation_' + name), None
 
     def actionTriggered(self, name):
-        if self.tool().shorthands.isChecked() and name in shorthands:
-            short = shorthands[name]
+        if name.startswith('tremolo'):
+            text = _tremolos[name[8:]]
+        elif self.tool().shorthands.isChecked() and name in _shorthands:
+            short = _shorthands[name]
             # LilyPond >= 2.17.25 changed -| to -!
             if name == 'staccatissimo':
                 version = documentinfo.docinfo(self.mainwindow().currentDocument()).version()
@@ -128,9 +135,11 @@ class Group(buttongroup.ButtonGroup):
             text = '_-^'[self.direction() + 1] + short
         else:
             text = ('_', '', '^')[self.direction() + 1] + '\\' + name
+
         cursor = self.mainwindow().textCursor()
         selection = cursor.hasSelection()
         cursors = articulation_positions(cursor)
+
         if cursors:
             with cursortools.compress_undo(cursor):
                 for c in cursors:
@@ -213,13 +222,12 @@ class OtherGroup(Group):
 class TremolosGroups(Group):
 
     def translateUI(self):
-        self.setTitle("Tremolos")
-        pass
+        self.setTitle(_("Tremolos"))
 
     def actionTexts(self):
-        yield 'tremolo_simple', 'Simple tremolo'
-        yield 'tremolo_double', 'Double tremolo'
-        yield 'tremolo_triple', 'Triple tremolo'
+        yield 'tremolo_simple', _('Simple tremolo')
+        yield 'tremolo_double', _('Double tremolo')
+        yield 'tremolo_triple', _('Triple tremolo')
 
 
 def articulation_positions(cursor):
