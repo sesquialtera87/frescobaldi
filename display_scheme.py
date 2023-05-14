@@ -1,26 +1,36 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QAction, QTextEdit, QTextBrowser, QVBoxLayout, QPushButton, QWidget, QDockWidget
 
 import actioncollection
-import panel
 import app
+import panel
 
 
-# from frescobaldi_app.panel import Panel
+class SchemeLogWidget(QWidget):
+    def __init__(self, tool):
+        super(SchemeLogWidget, self).__init__(tool)
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        layout.setContentsMargins(0, 10, 0, 0)
+
+        bt = QPushButton("Press")
+        layout.addWidget(bt)
+        layout.addWidget(QTextEdit())
+
 
 class SchemeLog(panel.Panel):
     def __init__(self, mainWindow):
         super(SchemeLog, self).__init__(mainWindow)
         self.hide()
+        self.setFloating(False)
         mainWindow.addDockWidget(Qt.LeftDockWidgetArea, self)
 
     def translateUI(self):
         self.setWindowTitle("Scheme Log")
 
     def createWidget(self):
-        import widget
-
-        w = widget.Widget(self)
+        w = SchemeLogWidget(self)
         return w
 
 
@@ -29,8 +39,9 @@ def ggg():
     pass
 
 
+# noinspection PyPep8Naming
 class ActionsCollection(actioncollection.ActionCollection):
-    name = "scheme"
+    name = "display scheme"
 
     def createActions(self, parent=None):
         self.scheme_log = QAction(parent)
