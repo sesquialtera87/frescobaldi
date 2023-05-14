@@ -21,13 +21,13 @@
 Frescobaldi main menu.
 """
 
-
 import builtins
 
 from PyQt5.QtCore import QSettings
 from PyQt5.QtWidgets import QMenu
 
 import app
+import display_scheme
 import icons
 import bookmarkmanager
 import documentactions
@@ -49,7 +49,6 @@ import file_export
 import browseriface
 import fonts
 
-
 # postpone translation
 _ = lambda *args: lambda: builtins._(*args)
 
@@ -68,6 +67,7 @@ def createMenus(mainwindow):
     m.addMenu(menu_document(mainwindow))
     m.addMenu(menu_window(mainwindow))
     m.addMenu(menu_session(mainwindow))
+    m.addMenu(debug_menu(mainwindow))
     if app.is_git_controlled():
         from vcs.menu import GitMenu
         m.addMenu(GitMenu(mainwindow))
@@ -76,6 +76,7 @@ def createMenus(mainwindow):
 
 class Menu(QMenu):
     """A QMenu that auto-translates its title by calling a lambda function."""
+
     def __init__(self, title_func, parent=None):
         """title_func should return the title for the menu when called."""
         super(Menu, self).__init__(parent)
@@ -348,6 +349,7 @@ def menu_tools_format(mainwindow):
     m.addAction(ac.tools_remove_trailing_whitespace)
     return m
 
+
 def menu_tools_transform(mainwindow):
     m = Menu(_('submenu title', "Musical &Transformations"), mainwindow)
     m.setIcon(icons.get('Audio-x-generic'))
@@ -358,6 +360,7 @@ def menu_tools_transform(mainwindow):
     m.addMenu(menu_tools_directions(mainwindow))
     m.addMenu(menu_tools_quick_remove(mainwindow))
     return m
+
 
 def menu_tools_lyrics(mainwindow):
     m = Menu(_('submenu title', "&Lyrics"), mainwindow)
@@ -389,6 +392,7 @@ def menu_tools_pitch(mainwindow):
     m.addAction(ac.pitch_mode_shift)
     m.addAction(ac.pitch_simplify)
     return m
+
 
 def menu_tools_rest(mainwindow):
     m = Menu(_('submenu title', "Rest"), mainwindow)
@@ -454,6 +458,7 @@ def menu_tools_quick_remove(mainwindow):
     m.addAction(ac.tools_quick_remove_markup)
     return m
 
+
 def menu_tools_directories(mainwindow):
     m = Menu(_('submenu title', "&Directories"), mainwindow)
     m.setIcon(icons.get('folder-open'))
@@ -463,6 +468,7 @@ def menu_tools_directories(mainwindow):
     ac = engrave.engraver(mainwindow).actionCollection
     m.addAction(ac.engrave_open_lilypond_datadir)
     return m
+
 
 def menu_document(mainwindow):
     return documentmenu.DocumentMenu(mainwindow)
@@ -500,4 +506,16 @@ def menu_help(mainwindow):
     m.addAction(ac.help_bugreport)
     m.addSeparator()
     m.addAction(ac.help_about)
+    return m
+
+
+def debug_menu(mainWindow):
+    from PyQt5.QtWidgets import QAction
+    ac = display_scheme.ac
+
+    m = Menu(_('menu debug', 'Debug'), mainWindow)
+    m.addAction(ac.scheme_log)
+    m.addSeparator()
+    ac = mainWindow.actionCollection
+    m.addAction(ac.file_save_as)
     return m
