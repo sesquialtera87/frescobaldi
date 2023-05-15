@@ -24,7 +24,6 @@ This module is imported when a contextmenu event occurs in the View (view.py).
 
 """
 
-
 from PyQt5.QtCore import QTimer, QUrl
 from PyQt5.QtWidgets import QAction
 
@@ -46,7 +45,6 @@ def contextmenu(view):
 
     actions.extend(jump_to_definition(cursor, menu, mainwindow))
 
-
     if cursor.hasSelection():
         import panelmanager
         actions.append(mainwindow.actionCollection.edit_copy_colored_html)
@@ -55,6 +53,9 @@ def contextmenu(view):
         ac = documentactions.get(mainwindow).actionCollection
         actions.append(ac.edit_cut_assign)
         actions.append(ac.edit_move_to_include_file)
+
+        from schemetool import ac
+        actions.append(ac.display_music)
 
     # now add the actions to the standard menu
     if actions:
@@ -73,17 +74,21 @@ def contextmenu(view):
 
 def open_files(cursor, menu, mainwindow):
     """Return a list of actions (maybe empty) for files at the cursor to open."""
+
     def action(filename):
         url = QUrl.fromLocalFile(filename)
         a = QAction(menu)
         a.setText(_("Open \"{url}\"").format(url=util.homify(filename)))
         a.setIcon(icons.get('document-open'))
+
         @a.triggered.connect
         def open_doc():
             d = mainwindow.openUrl(url)
             if d:
                 browseriface.get(mainwindow).setCurrentDocument(d)
+
         return a
+
     import open_file_at_cursor
     return list(map(action, open_file_at_cursor.filenames_at_cursor(cursor)))
 
@@ -94,21 +99,24 @@ def jump_to_definition(cursor, menu, mainwindow):
     node = definition.refnode(cursor)
     if node:
         a = QAction(menu)
+
         def complete():
             target = definition.target(node)
             if target:
                 if target.document is node.document:
                     a.setText(_("&Jump to definition (line {num})").format(
-                        num = node.document.index(node.document.block(target.position)) + 1))
+                        num=node.document.index(node.document.block(target.position)) + 1))
                 else:
                     a.setText(_("&Jump to definition (in {filename})").format(
                         filename=util.homify(target.document.filename)))
+
                 @a.triggered.connect
                 def activate():
                     definition.goto_target(mainwindow, target)
             else:
                 a.setText(_("&Jump to definition (unknown)"))
                 a.setEnabled(False)
+
         QTimer.singleShot(0, complete)
         return [a]
     return []
