@@ -1,0 +1,22 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="PyQt5.QtWidgets.triggered.connect" />
+          <option value="frescobaldi_app.quickinsert.articulations._" />
+          <option value="app" />
+          <option value="symbols" />
+          <option value="frescobaldi_app.logtool.logwidget._" />
+          <option value="frescobaldi_app.logtool._" />
+          <option value="frescobaldi_app.engrave._" />
+          <option value="frescobaldi_app.layoutcontrol._" />
+          <option value="frescobaldi_app.preferences.lilypond._" />
+          <option value="display_scheme._" />
+          <option value="frescobaldi_app.schemetool._" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

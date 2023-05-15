@@ -27,7 +27,6 @@ from PyQt5.QtCore import QSettings
 from PyQt5.QtWidgets import QMenu
 
 import app
-import display_scheme
 import icons
 import bookmarkmanager
 import documentactions
@@ -40,7 +39,6 @@ import lyrics
 import panelmanager
 import engrave.result_menu
 import snippet.menu
-import scorewiz
 import autocomplete
 import sidebar
 import matcher
@@ -510,8 +508,7 @@ def menu_help(mainwindow):
 
 
 def debug_menu(mainWindow):
-    from PyQt5.QtWidgets import QAction
-    ac = display_scheme.ac
+    from schemetool import ac
 
     m = Menu(_('menu debug', 'Debug'), mainWindow)
     m.addAction(ac.scheme_log)

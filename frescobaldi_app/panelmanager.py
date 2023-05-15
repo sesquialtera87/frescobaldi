@@ -21,7 +21,6 @@
 Manages the Panels (Tools).
 """
 
-
 import sys
 import collections
 
@@ -64,7 +63,7 @@ class PanelManager(plugin.MainWindowPlugin):
                 'menu': _('&MIDI'),
                 'panels': []
             }),
-            ])
+        ])
 
         # add the the panel stubs here
         self.loadPanel("musicview.MusicViewPanel", "viewers")
@@ -72,6 +71,7 @@ class PanelManager(plugin.MainWindowPlugin):
         self.loadPanel("viewers.manuscript.ManuscriptViewPanel", "viewers")
         self.loadPanel("docbrowser.HelpBrowser", "viewers")
         self.loadPanel("logtool.LogTool", "viewers")
+        self.loadPanel("schemetool.SchemeLog", "viewers")
         self.loadPanel("layoutcontrol.LayoutControlOptions", "viewers")
         self.loadPanel("quickinsert.QuickInsertPanel", "coding")
         self.loadPanel("charmap.CharMap", "coding")
@@ -90,7 +90,6 @@ class PanelManager(plugin.MainWindowPlugin):
         # make some default arrangements
         mainwindow.tabifyDockWidget(self.musicview, self.docbrowser)
         mainwindow.tabifyDockWidget(self.musicview, self.svgview)
-
 
     def loadPanel(self, name, submenu=None):
         """Loads the named Panel.
@@ -145,8 +144,8 @@ class PanelManager(plugin.MainWindowPlugin):
         result = []
         for name, panel in self._panels:
             if (self.mainwindow().dockWidgetArea(panel) == area
-                and not panel.isFloating()
-                and (panel.isVisible() or self.mainwindow().tabifiedDockWidgets(panel))):
+                    and not panel.isFloating()
+                    and (panel.isVisible() or self.mainwindow().tabifiedDockWidgets(panel))):
                 result.append((name, panel))
         return result
 
