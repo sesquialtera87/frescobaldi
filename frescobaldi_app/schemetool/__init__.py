@@ -1,8 +1,8 @@
 import os
 
-from PyQt5.QtCore import Qt, QProcess
-from PyQt5.QtGui import QTextCursor, QTextDocument, QTextCharFormat, QBrush, QColor, QFont
-from PyQt5.QtWidgets import QAction, QTextEdit, QVBoxLayout, QPushButton, QWidget
+from PyQt5.QtCore import Qt, QProcess, QSize
+from PyQt5.QtGui import QTextCursor, QTextDocument, QTextCharFormat, QBrush, QColor, QFont, QClipboard
+from PyQt5.QtWidgets import QAction, QTextEdit, QVBoxLayout, QPushButton, QWidget, QToolBar, QApplication
 
 import actioncollection
 import app
@@ -14,19 +14,43 @@ editor: QTextEdit = None
 class SchemeLogWidget(QWidget):
     def __init__(self, tool):
         super(SchemeLogWidget, self).__init__(tool)
+        import qtawesome as qta
 
         layout = QVBoxLayout()
-        self.setLayout(layout)
-        layout.setContentsMargins(0, 10, 0, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        bt = QPushButton("Press")
+        copy_action = QAction(self)
+        copy_action.setIcon(qta.icon('fa5s.copy'))
+        copy_action.setToolTip(_('Copy Scheme code to the clipboard'))
+        copy_action.triggered.connect(to_clipboard)
+
+        clear_action = QAction(self)
+        clear_action.setIcon(qta.icon('fa5s.broom'))
+        clear_action.setToolTip(_('Clear log'))
+        clear_action.triggered.connect(clear_log)
+
+        toolbar = QToolBar()
+        toolbar.setFloatable(False)
+        toolbar.setIconSize(QSize(24, 24))
+        toolbar.addActions([copy_action, clear_action])
+
+        self.setLayout(layout)
 
         global editor
-        layout.addWidget(bt)
+        layout.addWidget(toolbar)
         editor = QTextEdit()
         editor.setReadOnly(True)
         editor.setTabStopWidth(8)
         layout.addWidget(editor)
+
+
+def clear_log():
+    editor.clear()
+
+
+def to_clipboard():
+    cb: QClipboard = QApplication.clipboard()
+    cb.setText(editor.toPlainText()[_scheme[0]:_scheme[1]].strip())
 
 
 class SchemeLog(panel.Panel):
@@ -35,13 +59,12 @@ class SchemeLog(panel.Panel):
         self.hide()
         self.setFloating(False)
         from PyQt5.QtWidgets import QDockWidget
-        import qtawesome as qta
         d: QDockWidget = self
-        self.setWindowIcon(qta.icon('fa5s.hashtag', color='black'))
+        self.setContentsMargins(0, 5, 0, 0)
         mainWindow.addDockWidget(Qt.LeftDockWidgetArea, self)
 
     def translateUI(self):
-        self.setWindowTitle("Scheme Log")
+        self.setWindowTitle(_("Scheme Log"))
 
     def createWidget(self):
         w = SchemeLogWidget(self)
@@ -55,6 +78,9 @@ def show_log_widget():
     panel.activate()
 
 
+_scheme = None
+
+
 def lily_end(p: QProcess):
     c = cursor_for_last_block()
     editor.setTextCursor(c)
@@ -63,13 +89,16 @@ def lily_end(p: QProcess):
         frm = QTextCharFormat()
         frm.setForeground(QBrush(QColor('#f75464')))
         frm.setFontWeight(QFont.Bold)
+        c.insertBlock()
         c.insertText('\nConversion failed', frm)
     elif p.exitCode() == 0:
         frm = QTextCharFormat()
         frm.setForeground(QBrush(QColor('#006400')))
         frm.setFontWeight(QFont.Normal)
-        c.insertText('\n')
         text = p.readAllStandardOutput().data().decode('utf-8')
+        global _scheme
+        _scheme = c.position(), len(text)
+        c.insertBlock()
         c.insertText(text, frm)
     else:
         c.insertText('\n?????????????')
@@ -95,7 +124,7 @@ def insert_and_format_selection(selection: str):
     for line in selection.splitlines(keepends=True):
         crs.insertText('\t' + line.lstrip(), frm)
 
-    crs.insertText('\n}\n')
+    crs.insertText('\n}')
 
 
 def display_music():
@@ -140,7 +169,7 @@ def display_music():
     p.start()
 
 
-# noinspection PyPep8Naming
+# noinspection PyPep8Naming,PyUnresolvedReferences
 class ActionsCollection(actioncollection.ActionCollection):
     name = "display scheme"
 
