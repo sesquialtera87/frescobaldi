@@ -1,4 +1,4 @@
-from PyQt5.QtGui import QTextCursor, QTextDocument, QKeySequence
+from PyQt5.QtGui import QTextCursor, QTextDocument, QKeySequence, QTextBlock
 from PyQt5.QtWidgets import QAction
 from extensions import actions
 
@@ -22,6 +22,36 @@ def user_variable_at_cursor(cursor: QTextCursor) -> Token:
 
 def get_cursor() -> QTextCursor:
     return app.activeWindow().textCursor()
+
+
+def move_line_down():
+    print("Move down")
+    cursor = get_cursor()
+    doc: QTextDocument = cursor.document()
+    block: QTextBlock = cursortools.block(cursor)
+    n = block.firstLineNumber()
+    next = block.next()
+
+    if next.isValid():
+        cursor.select(QTextCursor.BlockUnderCursor)
+        text = cursor.selectedText()
+
+        if text.startswith('\\n'):
+            text = text[1:]
+
+        print(text)
+        print(n)
+        cursor.removeSelectedText()
+        block = doc.findBlockByLineNumber(n)
+        print(block.text())
+        cursor.setPosition(block.position()+block.length())
+        cursor.insertText(text)
+
+        # cursor.setPosition(next.position() + next.length())
+        # cursor.insertText(text)
+        # cursor.insertBlock()
+        # cursor.movePosition(QTextCursor.PreviousBlock, n=3)
+        # cursor.deleteChar()
 
 
 def delete_line():
@@ -55,6 +85,10 @@ class Actions(actions.ExtensionActionCollection):
         self.delete_current_line.setShortcutVisibleInContextMenu(True)
         self.delete_current_line.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_Delete))
 
+        self.move_line_down = QAction(parent)
+        self.move_line_down.setShortcutVisibleInContextMenu(True)
+        self.move_line_down.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_Down))
+
     # Implicitly called functions
 
     # This must be implemented
@@ -64,6 +98,8 @@ class Actions(actions.ExtensionActionCollection):
 
         self.delete_current_line.setText(_('Delete current line'))
 
+        self.move_line_down.setText(_('Move line down'))
+
     # The following functions *can* be implemented
     def configure_menu_actions(self):
         """Specify the behaviour of the menus."""
@@ -72,7 +108,7 @@ class Actions(actions.ExtensionActionCollection):
         self.set_menu_action_list('tools', None)
 
         # Show specific action(s) in the editor context menu
-        self.set_menu_action_list('editor', [self.generic_action, self.delete_current_line])
+        self.set_menu_action_list('editor', [self.generic_action, self.delete_current_line, self.move_line_down])
 
         # Show no actions (=> no submenu) in the music view context menu
         self.set_menu_action_list('musicview', [])
@@ -81,6 +117,7 @@ class Actions(actions.ExtensionActionCollection):
         """Connect actions to their handlers."""
         self.generic_action.triggered.connect(self.generic_action_triggered)
         self.delete_current_line.triggered.connect(delete_line)
+        self.move_line_down.triggered.connect(move_line_down)
 
     def load_settings(self):
         """Load settings from settings file."""
