@@ -1,28 +1,44 @@
-# This file is part of the Frescobaldi Extensions project,
-# https://github.com/frescobaldi-extensions
-#
-# Copyright (c) 2018 by Urs Liska and others
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 3
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# See http://www.gnu.org/licenses/ for more information.
-
-# Boilerplate Extension - Action collection
-
+from PyQt5.QtGui import QTextCursor, QTextDocument, QKeySequence
 from PyQt5.QtWidgets import QAction
 from extensions import actions
-import icons, cursortools, tokeniter
+
+import app, cursortools
+import icons
+import tokeniter
+from ly.lex import Token
+
+
+def user_variable_at_cursor(cursor: QTextCursor) -> Token:
+    from ly.lex.lilypond import ParseGlobal, Name
+
+    cursortools.strip_selection(cursor)
+    block = cursortools.block(cursor)
+    state = tokeniter.state(block)
+    partitions = tokeniter.partition(cursor)
+
+    if isinstance(state.parser(), ParseGlobal) and isinstance(partitions.middle, Name):
+        return partitions.middle
+
+
+def get_cursor() -> QTextCursor:
+    return app.activeWindow().textCursor()
+
+
+def delete_line():
+    cursor = get_cursor()
+    # crs.select(QTextCursor.BlockUnderCursor)
+    # crs.removeSelectedText()
+    # crs.movePosition(QTextCursor.NextRow)
+
+    start = end = cursortools.block(cursor)
+    while end.position() + end.length() < cursor.selectionEnd():
+        end = end.next()
+
+    cursor.setPosition(start.position())
+    cursor.setPosition(end.position(), cursor.KeepAnchor)
+    cursor.movePosition(cursor.EndOfBlock, cursor.KeepAnchor)
+    cursor.movePosition(cursor.NextBlock, cursor.KeepAnchor)
+    cursor.removeSelectedText()
 
 
 class Actions(actions.ExtensionActionCollection):
@@ -34,6 +50,10 @@ class Actions(actions.ExtensionActionCollection):
         self.generic_action = QAction(parent)
         # Icons can be loaded from the extension's `icons` subdirectory
         self.generic_action.setIcon(icons.get('twotone-calendar_view_day-24px'))
+        from PyQt5.QtCore import Qt
+        self.delete_current_line = QAction(parent)
+        self.delete_current_line.setShortcutVisibleInContextMenu(True)
+        self.delete_current_line.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_Delete))
 
     # Implicitly called functions
 
@@ -41,6 +61,8 @@ class Actions(actions.ExtensionActionCollection):
     def translateUI(self):
         self.generic_action.setText(_("Generic action (print message)"))
         self.generic_action.setToolTip(_("A longer text stored as multiline string"))
+
+        self.delete_current_line.setText(_('Delete current line'))
 
     # The following functions *can* be implemented
     def configure_menu_actions(self):
@@ -50,7 +72,7 @@ class Actions(actions.ExtensionActionCollection):
         self.set_menu_action_list('tools', None)
 
         # Show specific action(s) in the editor context menu
-        self.set_menu_action_list('editor', [self.generic_action])
+        self.set_menu_action_list('editor', [self.generic_action, self.delete_current_line])
 
         # Show no actions (=> no submenu) in the music view context menu
         self.set_menu_action_list('musicview', [])
@@ -58,6 +80,7 @@ class Actions(actions.ExtensionActionCollection):
     def connect_actions(self):
         """Connect actions to their handlers."""
         self.generic_action.triggered.connect(self.generic_action_triggered)
+        self.delete_current_line.triggered.connect(delete_line)
 
     def load_settings(self):
         """Load settings from settings file."""
@@ -67,18 +90,33 @@ class Actions(actions.ExtensionActionCollection):
     # Custom functionality
 
     def generic_action_triggered(self):
-        import app, inputdialog
-        from ly.lex.lilypond import ParseGlobal, Name
+        import inputdialog
 
-        cursor = app.activeWindow().textCursor()
-        cursortools.strip_selection(cursor)
-        block = cursortools.block(cursor)
-        state = tokeniter.state(block)
-        partitions = tokeniter.partition(cursor)
+        crs = get_cursor()
 
-        if state.parser() and isinstance(partitions.middle, Name):
-            name = inputdialog.getText(None, _("Cut and Assign"), _(
-                "Please enter the name for the variable to assign the selected "
-                "text to:"), regexp="[A-Za-z]+")
-            if not name:
-                return
+        token = user_variable_at_cursor(crs)
+        if token:
+            name = inputdialog.getText(app.activeWindow(), title=_("Refactor"), message=_("Rename variable to:"),
+                                       text='', regexp="[A-Za-z]+")
+            rename_variable(token, name.strip())
+
+
+def rename_variable(token: Token, new_name):
+    from ly.document import Runner, Document
+    from ly.lex.lilypond import UserCommand
+
+    doc: QTextDocument = app.activeWindow().currentDocument()
+    runner: Runner = Runner(Document(doc.toPlainText()))
+    tk = runner.next()
+    cursor: QTextCursor = QTextCursor(doc)
+
+    while tk:
+        if isinstance(tk, UserCommand):
+            if tk[1:] == token[0:]:
+                cursor.setPosition(tk.pos + 1)
+                cursor.setPosition(tk.end, QTextCursor.KeepAnchor)
+                cursor.insertText(new_name)
+                print(type(tk))
+            print(tk)
+
+        tk = runner.next()
