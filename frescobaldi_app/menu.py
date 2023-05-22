@@ -21,7 +21,6 @@
 Frescobaldi main menu.
 """
 
-
 import builtins
 
 from PyQt5.QtCore import QSettings
@@ -49,7 +48,6 @@ import file_export
 import browseriface
 import fonts
 
-
 # postpone translation
 _ = lambda *args: lambda: builtins._(*args)
 
@@ -76,6 +74,7 @@ def createMenus(mainwindow):
 
 class Menu(QMenu):
     """A QMenu that auto-translates its title by calling a lambda function."""
+
     def __init__(self, title_func, parent=None):
         """title_func should return the title for the menu when called."""
         super(Menu, self).__init__(parent)
@@ -211,6 +210,7 @@ def menu_view(mainwindow):
     m.addSeparator()
     m.addAction(documentactions.get(mainwindow).actionCollection.view_goto_file_or_definition)
     m.addAction(ac.view_goto_line)
+    m.addAction(ac.view_toggle_comment)
     ac = browseriface.get(mainwindow).actionCollection
     m.addAction(ac.go_back)
     m.addAction(ac.go_forward)
@@ -348,6 +348,7 @@ def menu_tools_format(mainwindow):
     m.addAction(ac.tools_remove_trailing_whitespace)
     return m
 
+
 def menu_tools_transform(mainwindow):
     m = Menu(_('submenu title', "Musical &Transformations"), mainwindow)
     m.setIcon(icons.get('Audio-x-generic'))
@@ -358,6 +359,7 @@ def menu_tools_transform(mainwindow):
     m.addMenu(menu_tools_directions(mainwindow))
     m.addMenu(menu_tools_quick_remove(mainwindow))
     return m
+
 
 def menu_tools_lyrics(mainwindow):
     m = Menu(_('submenu title', "&Lyrics"), mainwindow)
@@ -389,6 +391,7 @@ def menu_tools_pitch(mainwindow):
     m.addAction(ac.pitch_mode_shift)
     m.addAction(ac.pitch_simplify)
     return m
+
 
 def menu_tools_rest(mainwindow):
     m = Menu(_('submenu title', "Rest"), mainwindow)
@@ -454,6 +457,7 @@ def menu_tools_quick_remove(mainwindow):
     m.addAction(ac.tools_quick_remove_markup)
     return m
 
+
 def menu_tools_directories(mainwindow):
     m = Menu(_('submenu title', "&Directories"), mainwindow)
     m.setIcon(icons.get('folder-open'))
@@ -463,6 +467,7 @@ def menu_tools_directories(mainwindow):
     ac = engrave.engraver(mainwindow).actionCollection
     m.addAction(ac.engrave_open_lilypond_datadir)
     return m
+
 
 def menu_document(mainwindow):
     return documentmenu.DocumentMenu(mainwindow)
