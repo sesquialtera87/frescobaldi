@@ -9,10 +9,10 @@ import cursortools
 def toggle_comments():
     from mainwindow import MainWindow
     from snippet.insert import state
+
     window: MainWindow = app.activeWindow()
     cursor: QTextCursor = window.textCursor()
     state = state(cursor)
-    print(state)
 
     if not cursor.hasSelection():
         cursor.select(QTextCursor.LineUnderCursor)
@@ -33,7 +33,7 @@ def toggle_comments():
     window.setTextCursor(cursor)
 
 
-def is_commented(state, line: str):
+def is_commented(state, line: str) -> re.Match:
     mode = state[0]
 
     if mode == 'lilypond':
@@ -69,6 +69,8 @@ def comment_line(state, cursor: QTextCursor, block: QTextBlock):
     mode = state[0]
 
     def left_line_comment(prefix: str):
+        """Insert the prefix at the beginning of the line. This serves for line comments as in Lilypond, Scheme, LaTex
+        commented out by a single char. It doesn't work for example for Html where start-end tokens are required."""
         cursor.setPosition(block.position())
         cursor.insertText(prefix)
 
