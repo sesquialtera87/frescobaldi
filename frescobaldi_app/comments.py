@@ -4,67 +4,84 @@ from PyQt5.QtGui import QTextCursor, QTextBlock
 
 import app
 import cursortools
-import documentinfo
 
 
 def toggle_comments():
-    print("UUUUU")
-    doc = app.activeWindow().currentDocument()
-    cursor = app.activeWindow().textCursor()
-    mode = documentinfo.mode(doc)
+    from mainwindow import MainWindow
+    from snippet.insert import state
+    window: MainWindow = app.activeWindow()
+    cursor: QTextCursor = window.textCursor()
+    state = state(cursor)
+    print(state)
 
     if not cursor.hasSelection():
         cursor.select(QTextCursor.LineUnderCursor)
 
     for block in cursortools.blocks(cursor):
         if cursortools.isblank(block):
+            cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor)
             continue
 
-        comment_span = is_commented(mode, block.text())
+        comment_span = is_commented(state, block.text())
 
         if comment_span:
-            uncomment_line(mode, cursor, block, comment_span)
+            uncomment_line(state, cursor, block, comment_span)
         else:
-            comment_line(mode, cursor, block)
+            comment_line(state, cursor, block)
+            cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor)
+
+    window.setTextCursor(cursor)
 
 
-def is_commented(mode, line: str):
+def is_commented(state, line: str):
+    mode = state[0]
+
     if mode == 'lilypond':
+        if 'scheme' in state:
+            return re.match(r'(^\s*;+)', line)
+        else:
+            return re.match(r'(^\s*%\s*)', line)
+    elif mode == 'latex':
         return re.match(r'(^\s*%\s*)', line)
     elif mode == 'html':
         return re.match(r'(<!--).*(-->)', line)
-    elif mode == 'scheme':
-        for g in re.finditer(r'(^\s*;+\s*)', line):
-            return g.span()
 
 
-def uncomment_line(mode, cursor: QTextCursor, block: QTextBlock, match: re.Match):
-    if mode == 'lilypond':
+def uncomment_line(state, cursor: QTextCursor, block: QTextBlock, match: re.Match):
+    mode = state[0]
+
+    if mode == 'lilypond' or mode == 'latex':
         cursor.setPosition(match.pos + block.position(), QTextCursor.MoveAnchor)
         cursor.setPosition(match.end() + block.position(), QTextCursor.KeepAnchor)
         cursor.removeSelectedText()
     elif mode == 'html':
-        cursor.beginEditBlock()
-        cursor.setPosition(match.pos + block.position(), QTextCursor.MoveAnchor)
-        cursor.setPosition(match.pos + len('<!--'), QTextCursor.KeepAnchor)
-        cursor.removeSelectedText()
-        cursor.setPosition(match.endpos - len('-->'), QTextCursor.MoveAnchor)
-        cursor.setPosition(match.endpos + block.position(), QTextCursor.KeepAnchor)
-        cursor.removeSelectedText()
-        cursor.endEditBlock()
+        with cursortools.compress_undo(cursor):
+            cursor.setPosition(match.endpos + block.position() - len('-->'), QTextCursor.MoveAnchor)
+            cursor.setPosition(match.endpos + block.position(), QTextCursor.KeepAnchor)
+            cursor.removeSelectedText()
+
+            cursor.setPosition(match.pos + block.position(), QTextCursor.MoveAnchor)
+            cursor.setPosition(match.pos + block.position() + len('<!--'), QTextCursor.KeepAnchor)
+            cursor.removeSelectedText()
 
 
-def comment_line(mode, cursor: QTextCursor, block: QTextBlock):
+def comment_line(state, cursor: QTextCursor, block: QTextBlock):
+    mode = state[0]
+
+    def left_line_comment(prefix: str):
+        cursor.setPosition(block.position())
+        cursor.insertText(prefix)
+
     if mode == 'lilypond':
-        cursor.setPosition(block.position())
-        cursor.insertText('% ')
+        if 'scheme' in state:
+            left_line_comment(';')
+        else:
+            left_line_comment('%')
+    elif mode == 'latex':
+        left_line_comment('%')
     elif mode == 'html':
-        cursor.beginEditBlock()
-        cursor.setPosition(block.position())
-        cursor.insertText('<!--')
-        cursor.setPosition(block.position() + block.length() - 1)
-        cursor.insertText('-->')
-        cursor.endEditBlock()
-    elif mode == 'scheme':
-        for g in re.finditer(r'(^\s*;+\s*)', line):
-            return g.span()
+        with cursortools.compress_undo(cursor):
+            cursor.setPosition(block.position())
+            cursor.insertText('<!--')
+            cursor.setPosition(block.position() + block.length() - 1)
+            cursor.insertText('-->')

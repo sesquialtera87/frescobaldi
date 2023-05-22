@@ -1104,7 +1104,7 @@ class MainWindow(QMainWindow):
         ac.help_bugreport.triggered.connect(self.reportBug)
 
         import comments
-        ac.view_toggle_comment.triggered.connect(comments.toggle_comments)
+        ac.view_toggle_line_comment.triggered.connect(comments.toggle_comments)
 
     def populateRecentFilesMenu(self):
         self.menu_recent_files.clear()
@@ -1239,7 +1239,7 @@ class ActionCollection(actioncollection.ActionCollection):
         self.view_scroll_up = QAction(parent)
         self.view_scroll_down = QAction(parent)
         self.view_goto_line = QAction(parent)
-        self.view_toggle_comment = QAction(parent)
+        self.view_toggle_line_comment = QAction(parent)
 
         self.window_new = QAction(parent)
         self.window_fullscreen = QAction(parent)
@@ -1324,7 +1324,7 @@ class ActionCollection(actioncollection.ActionCollection):
         self.view_scroll_up.setShortcut(Qt.CTRL + Qt.Key_Up)
         self.view_scroll_down.setShortcut(Qt.CTRL + Qt.Key_Down)
         self.view_goto_line.setShortcut(Qt.CTRL + Qt.ALT + Qt.Key_G)
-        self.view_toggle_comment.setShortcut(Qt.CTRL + Qt.Key_Slash)
+        self.view_toggle_line_comment.setShortcut(Qt.CTRL + Qt.Key_Slash)
 
         self.window_fullscreen.setShortcuts([QKeySequence(Qt.CTRL + Qt.SHIFT + Qt.Key_F), QKeySequence(Qt.Key_F11)])
 
@@ -1406,7 +1406,9 @@ class ActionCollection(actioncollection.ActionCollection):
         self.view_scroll_up.setText(_("Scroll Up"))
         self.view_scroll_down.setText(_("Scroll Down"))
         self.view_goto_line.setText(_("&Goto Line..."))
-        self.view_toggle_comment.setText(_("Comment/Uncomment"))
+        self.view_toggle_line_comment.setText(_("Comment/Uncomment"))
+        self.view_toggle_line_comment.setToolTip(_("Comment/uncomment current line or selected block "
+                                                   "with line comment"))
 
         self.window_new.setText(_("New &Window"))
         self.window_fullscreen.setText(_("&Fullscreen"))

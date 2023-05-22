@@ -210,7 +210,7 @@ def menu_view(mainwindow):
     m.addSeparator()
     m.addAction(documentactions.get(mainwindow).actionCollection.view_goto_file_or_definition)
     m.addAction(ac.view_goto_line)
-    m.addAction(ac.view_toggle_comment)
+    m.addAction(ac.view_toggle_line_comment)
     ac = browseriface.get(mainwindow).actionCollection
     m.addAction(ac.go_back)
     m.addAction(ac.go_forward)
