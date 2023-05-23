@@ -314,10 +314,10 @@ class BaseColors(QGroupBox):
 
         self.color = {}
         self.labels = {}
-        for name in textformats.baseColors:
-            c = self.color[name] = ColorButton(self)
-            c.colorChanged.connect((lambda name: lambda: self.changed.emit(name))(name))
-            l = self.labels[name] = QLabel()
+        for color_name in textformats.baseColors:
+            c = self.color[color_name] = ColorButton(self)
+            c.colorChanged.connect((lambda name: lambda: self.changed.emit(name))(color_name))
+            l = self.labels[color_name] = QLabel()
             l.setBuddy(c)
             row = grid.rowCount()
             grid.addWidget(l, row, 0)

@@ -22,12 +22,9 @@ The Highlighter class provides syntax highlighting and more information
 about a document's contents.
 """
 
-
-
 from PyQt5.QtGui import (
     QColor, QSyntaxHighlighter, QTextBlockUserData, QTextCharFormat,
     QTextCursor, QTextDocument)
-
 
 import ly.lex
 import ly.colorize
@@ -41,7 +38,6 @@ import plugin
 import variables
 import documentinfo
 
-
 metainfo.define('highlighting', True)
 
 
@@ -53,9 +49,9 @@ def mapping(data):
 
     """
     return ly.colorize.Mapper((cls, data.textFormat(mode, style.name))
-                        for mode, styles in ly.colorize.default_mapping()
-                            for style in styles
-                                for cls in style.classes)
+                              for mode, styles in ly.colorize.default_mapping()
+                              for style in styles
+                              for cls in style.classes)
 
 
 def highlighter(doc):
@@ -81,7 +77,8 @@ def _reset_highlight_mapping():
     except NameError:
         pass
 
-app.settingsChanged.connect(_reset_highlight_mapping, -100) # before all others
+
+app.settingsChanged.connect(_reset_highlight_mapping, -100)  # before all others
 
 
 class Highlighter(plugin.Plugin, QSyntaxHighlighter):
@@ -96,6 +93,7 @@ class Highlighter(plugin.Plugin, QSyntaxHighlighter):
     are changed.
 
     """
+
     def __init__(self, doc):
         QSyntaxHighlighter.__init__(self, doc)
         self._fridge = ly.lex.Fridge()

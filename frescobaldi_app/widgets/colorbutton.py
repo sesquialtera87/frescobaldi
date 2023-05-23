@@ -43,6 +43,7 @@ class ColorButton(QPushButton):
         self.setFixedSize(self.sizeHint())
         self._color = QColor()
         self.clicked.connect(self.openDialog)
+        self.setMinimumSize(100,20)
 
     def color(self):
         """Returns the currently set color."""
