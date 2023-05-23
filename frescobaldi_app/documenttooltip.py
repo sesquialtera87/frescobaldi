@@ -24,10 +24,9 @@ The show() function displays a tooltip showing part of a Document.
 
 """
 
-
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import (
-    QFont, QPainter, QPixmap, QTextCursor, QTextDocument)
+    QFont, QPainter, QPixmap, QTextCursor, QTextDocument, QAbstractTextDocumentLayout, QPalette, QColor)
 from PyQt5.QtWidgets import QLabel
 
 import metainfo
@@ -44,7 +43,7 @@ def pixmap(cursor, num_lines=6, scale=0.8):
 
     If the cursor has no selection, num_lines are drawn.
 
-    By default the text is drawn 0.8 * the normal font size. You can change
+    By default, the text is drawn 0.8 * the normal font size. You can change
     that by supplying the scale parameter.
 
     """
@@ -139,5 +138,3 @@ def time_position(cursor):
     if pos is not None:
         import ly.duration
         return ly.duration.format_fraction(pos)
-
-
