@@ -236,7 +236,7 @@ class TremolosGroups(Group):
 
     @staticmethod
     def default_tremolo():
-        cursor: QTextCursor = app.activeWindow().textCursor()
+        cursor = app.activeWindow().textCursor()
         c = lydocument.cursor(cursor)
         if cursor.hasSelection():
             partial = ly.document.INSIDE
@@ -251,6 +251,7 @@ class TremolosGroups(Group):
                 # tremolo cannot be placed on more than two notes
                 return
         else:
+            # search for the first valid item (sometimes the first item in the isn't a Note)
             i = 0
             while i < len(items):
                 if len(items[i].tokens) != 0:
