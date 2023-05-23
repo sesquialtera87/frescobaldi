@@ -124,7 +124,11 @@ class Group(buttongroup.ButtonGroup):
 
     def actionTriggered(self, name):
         if name.startswith('tremolo'):
-            text = _tremolos[name[8:]]
+            if name[8:] == 'default':
+                TremolosGroups.default_tremolo()
+                return
+            else:
+                text = _tremolos[name[8:]]
         elif self.tool().shorthands.isChecked() and name in _shorthands:
             short = _shorthands[name]
             # LilyPond >= 2.17.25 changed -| to -!
@@ -225,9 +229,53 @@ class TremolosGroups(Group):
         self.setTitle(_("Tremolos"))
 
     def actionTexts(self):
+        yield 'tremolo_default', _('Two-note tremolo')
         yield 'tremolo_simple', _('Simple tremolo')
         yield 'tremolo_double', _('Double tremolo')
         yield 'tremolo_triple', _('Triple tremolo')
+
+    @staticmethod
+    def default_tremolo():
+        cursor: QTextCursor = app.activeWindow().textCursor()
+        c = lydocument.cursor(cursor)
+        if cursor.hasSelection():
+            partial = ly.document.INSIDE
+        else:
+            c.select_end_of_block()
+            partial = ly.document.OUTSIDE
+
+        items = list(ly.rhythm.music_items(c, partial=partial))
+
+        if cursor.hasSelection():
+            if len(items) != 2:
+                # tremolo cannot be placed on more than two notes
+                return
+        else:
+            i = 0
+            while i < len(items):
+                if len(items[i].tokens) != 0:
+                    break
+                i += 1
+
+            del items[0:i]
+            del items[i + 2:]
+
+        if len(items) in [0, 1]:
+            return
+
+        with cursortools.compress_undo(cursor):
+            cursor.setPosition(items[0].pos, QTextCursor.MoveAnchor)
+            cursor.setPosition(items[1].end, QTextCursor.KeepAnchor)
+            selection = cursor.selectedText()
+            cursor.removeSelectedText()
+            cursor.insertText('\\repeat tremolo 0 { ' + selection + ' }')
+
+            # select the repetition number
+            cursor.setPosition(items[0].pos, QTextCursor.MoveAnchor)
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.MoveAnchor, n=len('\\repeat tremolo '))
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, n=1)
+
+        app.activeWindow().currentView().setTextCursor(cursor)
 
 
 def articulation_positions(cursor):
