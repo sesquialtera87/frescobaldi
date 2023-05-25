@@ -1,9 +1,13 @@
 import os
+from hashlib import md5
 
 from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtWidgets import (QGridLayout, QCheckBox, QLabel, QComboBox, QLineEdit, QWidget,
-                             QHBoxLayout, QVBoxLayout, QPushButton, QGroupBox, QFileDialog, QDialog, QDialogButtonBox)
+                             QHBoxLayout, QVBoxLayout, QPushButton, QGroupBox, QFileDialog, QDialog, QDialogButtonBox,
+                             QMessageBox)
 import app
+
+_temp_settings_path = None
 
 
 def show_export_dialog():
@@ -11,7 +15,33 @@ def show_export_dialog():
     dialog.exec_()
 
 
-# noinspection PyArgumentList
+# noinspection PyUnresolvedReferences
+def export_colored_html(filename):
+    from highlight2html import html_document
+
+    doc = app.activeWindow().currentDocument()
+    s = QSettings()
+    s.beginGroup("source_export")
+    number_lines = s.value("number_lines", False, bool)
+    inline_style = s.value("inline_export", False, bool)
+    wrap_tag = s.value("wrap_tag", "pre", str)
+    wrap_attrib = s.value("wrap_attrib", "id", str)
+    wrap_attrib_name = s.value("wrap_attrib_name", "document", str)
+    html = html_document(doc, inline=inline_style, number_lines=number_lines,
+                         wrap_tag=wrap_tag, wrap_attrib=wrap_attrib,
+                         wrap_attrib_name=wrap_attrib_name)
+    try:
+        with open(filename, "wb") as f:
+            f.write(html.encode('utf-8'))
+    except IOError as e:
+        msg = _("{message}\n\n{strerror} ({errno})").format(
+            message=_("Could not write to: {url}").format(url=filename),
+            strerror=e.strerror,
+            errno=e.errno)
+        QMessageBox.critical(app.activeWindow(), app.caption(_("Error")), msg)
+
+
+# noinspection PyArgumentList,PyUnresolvedReferences
 class HtmlDialog(QDialog):
 
     def __init__(self):
@@ -50,7 +80,8 @@ class HtmlDialog(QDialog):
 
         buttons = QDialogButtonBox()
         buttons.addButton(self.export_button, QDialogButtonBox.AcceptRole)
-        buttons.addButton(QDialogButtonBox.Cancel)
+        buttons.setStandardButtons(QDialogButtonBox.Cancel)
+        buttons.rejected.connect(lambda: self.reject())
 
         main_layout.addWidget(buttons)
 
@@ -73,7 +104,8 @@ class HtmlDialog(QDialog):
 
     def _validate(self):
         directory = self.htmlDirTextField.text().strip()
-        self.export_button.setEnabled(os.path.exists(directory))
+        file_name = self.htmlFileNameTextField.text().strip()
+        self.export_button.setEnabled(os.path.exists(directory) and len(file_name) != 0)
 
     def path_section(self):
         html_dir = QLabel('Directory:')
@@ -83,6 +115,7 @@ class HtmlDialog(QDialog):
         self.htmlDirTextField.textChanged.connect(self._validate)
 
         self.htmlFileNameTextField = QLineEdit()
+        self.htmlFileNameTextField.textChanged.connect(self._validate)
 
         browse_button = QPushButton('...')
         browse_button.setMaximumWidth(40)
@@ -158,6 +191,15 @@ class HtmlDialog(QDialog):
 
         return layout
 
+    def file_name(self):
+        name = self.htmlFileNameTextField.text().strip()
+
+        if not name.lower().endswith('.html'):
+            name = name + '.html'
+
+        # check override existing file??
+        return os.path.join(self.htmlDirTextField.text().strip(), name)
+
     def exec_(self):
         self.load_settings()
         return super().exec_()
@@ -165,6 +207,7 @@ class HtmlDialog(QDialog):
     def export(self):
         self.save_settings()
         self.accept()
+        export_colored_html(self.file_name())
 
     def init(self):
         wdg: QWidget = QWidget()
@@ -184,6 +227,14 @@ class HtmlDialog(QDialog):
         main_layout.addWidget(buttons)
         self.translateUI()
 
+    @staticmethod
+    def temp_settings() -> QSettings:
+        global _temp_settings_path
+        if not _temp_settings_path:
+            import util
+            _temp_settings_path = os.path.join(util.tempdir(), 'recents.ini')
+        return QSettings(_temp_settings_path, QSettings.IniFormat)
+
     def load_settings(self):
         s = QSettings()
         s.beginGroup("source_export")
@@ -200,15 +251,23 @@ class HtmlDialog(QDialog):
         self.wrapAttribSelector.setCurrentIndex(attrib_selector)
         self.wrapAttribName.setText(s.value("wrap_attrib_name", "document", str))
 
+        s = HtmlDialog.temp_settings()
         doc = app.activeWindow().currentDocument()
         path = doc.url().path()
+        ck = md5(path.encode()).hexdigest()
 
-        if path:
-            name, ext = os.path.splitext(os.path.basename(path))
-            self.htmlDirTextField.setText(os.path.dirname(path))
-            self.htmlFileNameTextField.setText(name + '.html')
+        if ck in s.childGroups():
+            s.beginGroup(ck)
+            self.htmlDirTextField.setText(s.value('dir', '', str))
+            self.htmlFileNameTextField.setText(s.value('filename', '', str))
+            s.endGroup()
         else:
-            self.htmlDirTextField.setText(os.path.expanduser('~'))
+            if path:
+                name, ext = os.path.splitext(os.path.basename(path))
+                self.htmlDirTextField.setText(os.path.dirname(path).replace('/', '', 1))
+                self.htmlFileNameTextField.setText(name + '.html')
+            else:
+                self.htmlDirTextField.setText(os.path.expanduser('~'))
 
         self.htmlFileNameTextField.setFocus()
         self.htmlFileNameTextField.selectAll()
@@ -224,6 +283,15 @@ class HtmlDialog(QDialog):
         s.setValue("wrap_tag", self.wrapTagSelector.currentText())
         s.setValue("wrap_attrib", self.wrapAttribSelector.currentText())
         s.setValue("wrap_attrib_name", self.wrapAttribName.text())
+
+        doc_path = app.activeWindow().currentDocument().url().path()
+        ck = md5(doc_path.encode()).hexdigest()
+
+        s = HtmlDialog.temp_settings()
+        s.beginGroup(ck)
+        s.setValue('dir', self.htmlDirTextField.text().strip())
+        s.setValue('filename', self.htmlFileNameTextField.text().strip())
+        s.endGroup()
 
     def translate_ui(self):
         self.setWindowTitle(_("Export to HTML"))
