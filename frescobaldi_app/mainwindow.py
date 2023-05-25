@@ -21,8 +21,6 @@
 Frescobaldi Main Window.
 """
 
-
-
 import itertools
 import os
 import sys
@@ -65,7 +63,6 @@ import file_import
 
 
 class MainWindow(QMainWindow):
-
     # emitted when the MainWindow will close
     aboutToClose = pyqtSignal()
 
@@ -98,7 +95,7 @@ class MainWindow(QMainWindow):
         self.setDockOptions(
             QMainWindow.AllowNestedDocks |
             QMainWindow.AnimatedDocks |
-             QMainWindow.AllowTabbedDocks
+            QMainWindow.AllowTabbedDocks
         )
 
         # this could be made configurable
@@ -157,7 +154,6 @@ class MainWindow(QMainWindow):
         app.mainwindowCreated(self)
         app.settingsChanged.connect(self.settingsChanged)
         self.settingsChanged()
-
 
     def documents(self):
         """Returns the list of documents in the order of the TabBar."""
@@ -363,9 +359,10 @@ class MainWindow(QMainWindow):
         else:
             self.setCurrentDocument(doc, findOpenView=True)
             res = QMessageBox.warning(self, _("dialog title", "Close Document"),
-                _("The document \"{name}\" has been modified.\n"
-                "Do you want to save your changes or discard them?").format(name=doc.documentName()),
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+                                      _("The document \"{name}\" has been modified.\n"
+                                        "Do you want to save your changes or discard them?").format(
+                                          name=doc.documentName()),
+                                      QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
             if res == QMessageBox.Save:
                 allow_close = self.saveDocument(doc)
             else:
@@ -465,15 +462,15 @@ class MainWindow(QMainWindow):
                 url, e = failures[0]
                 filename = url.toLocalFile()
                 msg = _("{message}\n\n{strerror} ({errno})").format(
-                    message = _("Could not read from: {url}").format(url=filename),
-                    strerror = e.strerror,
-                    errno = e.errno)
+                    message=_("Could not read from: {url}").format(url=filename),
+                    strerror=e.strerror,
+                    errno=e.errno)
             else:
                 msg = _("Could not read:") + "\n\n" + "\n".join(
                     "{url}: {strerror} ({errno})".format(
-                        url = url.toLocalFile(),
-                        strerror = e.strerror,
-                        errno = e.errno) for url, e in failures)
+                        url=url.toLocalFile(),
+                        strerror=e.strerror,
+                        errno=e.errno) for url, e in failures)
             QMessageBox.critical(self, app.caption(_("Error")), msg)
         return docs
 
@@ -520,7 +517,7 @@ class MainWindow(QMainWindow):
             if snippets.text(template):
                 insert.insert(template, self.currentView())
                 d.setUndoRedoEnabled(False)
-                d.setUndoRedoEnabled(True) # d.clearUndoRedoStacks() only in Qt >= 4.7
+                d.setUndoRedoEnabled(True)  # d.clearUndoRedoStacks() only in Qt >= 4.7
                 d.setModified(False)
         elif ndoc == "version":
             import lilypondinfo
@@ -551,7 +548,7 @@ class MainWindow(QMainWindow):
         caption = app.caption(_("dialog title", "Rename/Move File"))
         new_filename = QFileDialog.getSaveFileName(self, caption, filename, filetypes)[0]
         if not new_filename or filename == new_filename:
-            return False # cancelled
+            return False  # cancelled
         new_url = QUrl.fromLocalFile(new_filename)
         doc.setUrl(new_url)
         if self.saveDocument(doc):
@@ -559,9 +556,9 @@ class MainWindow(QMainWindow):
                 os.remove(filename)
             except IOError as e:
                 msg = _("{message}\n\n{strerror} ({errno})").format(
-                    message = _("Could not delete: {url}").format(url=filename),
-                    strerror = e.strerror,
-                    errno = e.errno)
+                    message=_("Could not delete: {url}").format(url=filename),
+                    strerror=e.strerror,
+                    errno=e.errno)
                 QMessageBox.critical(self, app.caption(_("Error")), msg)
                 return False
             else:
@@ -588,7 +585,7 @@ class MainWindow(QMainWindow):
                         directory = os.path.dirname(d.url().toLocalFile())
                         break
                 else:
-                    directory = app.basedir() # default directory to save to
+                    directory = app.basedir()  # default directory to save to
 
                 import documentinfo
                 import ly.lex
@@ -597,7 +594,7 @@ class MainWindow(QMainWindow):
             caption = app.caption(_("dialog title", "Save File"))
             filename = QFileDialog.getSaveFileName(self, caption, filename, filetypes)[0]
             if not filename:
-                return False # cancelled
+                return False  # cancelled
             url = QUrl.fromLocalFile(filename)
         else:
             url = doc.url()
@@ -615,9 +612,9 @@ class MainWindow(QMainWindow):
             doc.save(url)
         except IOError as e:
             msg = _("{message}\n\n{strerror} ({errno})").format(
-                message = _("Could not write to: {url}").format(url=filename),
-                strerror = e.strerror,
-                errno = e.errno)
+                message=_("Could not write to: {url}").format(url=filename),
+                strerror=e.strerror,
+                errno=e.errno)
             QMessageBox.critical(self, app.caption(_("Error")), msg)
             return False
         else:
@@ -675,15 +672,15 @@ class MainWindow(QMainWindow):
         dirname = os.path.dirname(doc.url().toLocalFile()) or app.basedir()
         filename = QFileDialog.getSaveFileName(self, caption, dirname, filetypes)[0]
         if not filename:
-            return # cancelled
+            return  # cancelled
         try:
             with open(filename, "wb") as f:
                 f.write(data)
         except IOError as e:
             msg = _("{message}\n\n{strerror} ({errno})").format(
-                message = _("Could not write to: {url}").format(url=filename),
-                strerror = e.strerror,
-                errno = e.errno)
+                message=_("Could not write to: {url}").format(url=filename),
+                strerror=e.strerror,
+                errno=e.errno)
             QMessageBox.critical(self, app.caption(_("Error")), msg)
 
     def closeCurrentDocument(self):
@@ -696,15 +693,15 @@ class MainWindow(QMainWindow):
 
         """
         d = self.currentDocument()
-        assert not d.url().isEmpty() # otherwise the button should have been disabled
+        assert not d.url().isEmpty()  # otherwise the button should have been disabled
         try:
             d.load(keepUndo=True)
         except IOError as e:
             filename = d.url().toLocalFile()
             msg = _("{message}\n\n{strerror} ({errno})").format(
-                message = _("Could not read from: {url}").format(url=filename),
-                strerror = e.strerror,
-                errno = e.errno)
+                message=_("Could not read from: {url}").format(url=filename),
+                strerror=e.strerror,
+                errno=e.errno)
             QMessageBox.critical(self, app.caption(_("Error")), msg)
 
     def reloadAllDocuments(self):
@@ -721,9 +718,9 @@ class MainWindow(QMainWindow):
         if failures:
             msg = _("Could not reload:") + "\n\n" + "\n".join(
                 "{url}: {strerror} ({errno})".format(
-                    url = d.url().toLocalFile(),
-                    strerror = e.strerror,
-                    errno = e.errno) for d, e in failures)
+                    url=d.url().toLocalFile(),
+                    strerror=e.strerror,
+                    errno=e.errno) for d, e in failures)
             QMessageBox.critical(self, app.caption(_("Error")), msg)
 
     def saveAllDocuments(self):
@@ -784,7 +781,7 @@ class MainWindow(QMainWindow):
 
     def quit(self):
         """Closes all MainWindows."""
-        for window in app.windows[:]: # copy
+        for window in app.windows[:]:  # copy
             if window is not self:
                 window.close()
         self.close()
@@ -809,9 +806,9 @@ class MainWindow(QMainWindow):
                     data = f.read()
             except IOError as e:
                 msg = _("{message}\n\n{strerror} ({errno})").format(
-                    message = _("Could not read from: {url}").format(url=filename),
-                    strerror = e.strerror,
-                    errno = e.errno)
+                    message=_("Could not read from: {url}").format(url=filename),
+                    strerror=e.strerror,
+                    errno=e.errno)
                 QMessageBox.critical(self, app.caption(_("Error")), msg)
             else:
                 text = util.universal_newlines(util.decode(data))
@@ -859,9 +856,9 @@ class MainWindow(QMainWindow):
         if dir:
             name = os.path.join(dir, name)
         filename = QFileDialog.getSaveFileName(self, app.caption(_("Export as HTML")),
-            name, "{0} (*.html)".format("HTML Files"))[0]
+                                               name, "{0} (*.html)".format("HTML Files"))[0]
         if not filename:
-            return #cancelled
+            return  # cancelled
 
         s = QSettings()
         s.beginGroup("source_export")
@@ -872,15 +869,16 @@ class MainWindow(QMainWindow):
         wrap_attrib_name = s.value("wrap_attrib_name", "document", str)
         import highlight2html
         html = highlight2html.html_document(doc, inline=inline_style, number_lines=number_lines,
-            wrap_tag=wrap_tag, wrap_attrib=wrap_attrib, wrap_attrib_name=wrap_attrib_name)
+                                            wrap_tag=wrap_tag, wrap_attrib=wrap_attrib,
+                                            wrap_attrib_name=wrap_attrib_name)
         try:
             with open(filename, "wb") as f:
                 f.write(html.encode('utf-8'))
         except IOError as e:
             msg = _("{message}\n\n{strerror} ({errno})").format(
-                message = _("Could not write to: {url}").format(url=filename),
-                strerror = e.strerror,
-                errno = e.errno)
+                message=_("Could not write to: {url}").format(url=filename),
+                strerror=e.strerror,
+                errno=e.errno)
             QMessageBox.critical(self, app.caption(_("Error")), msg)
 
     def undo(self):
@@ -914,8 +912,8 @@ class MainWindow(QMainWindow):
         document_body_only = s.value("copy_document_body_only", False, bool)
         import highlight2html
         html = highlight2html.html_inline(cursor, inline=inline_style, number_lines=number_lines,
-            full_html=not document_body_only, wrap_tag=wrap_tag, wrap_attrib=wrap_attrib,
-            wrap_attrib_name=wrap_attrib_name)
+                                          full_html=not document_body_only, wrap_tag=wrap_tag, wrap_attrib=wrap_attrib,
+                                          wrap_attrib_name=wrap_attrib_name)
         data = QMimeData()
         data.setText(html) if as_plain_text else data.setHtml(html)
         QApplication.clipboard().setMimeData(data)
@@ -1078,7 +1076,8 @@ class MainWindow(QMainWindow):
         ac.file_close_all_and_session.triggered.connect(
             self.closeAllDocumentsAndSession
         )
-        ac.export_colored_html.triggered.connect(self.exportColoredHtml)
+        import html_export
+        ac.export_colored_html.triggered.connect(html_export.show_export_dialog)
         ac.edit_undo.triggered.connect(self.undo)
         ac.edit_redo.triggered.connect(self.redo)
         ac.edit_cut.triggered.connect(self.cut)
@@ -1189,6 +1188,7 @@ class MainWindow(QMainWindow):
 
 class ActionCollection(actioncollection.ActionCollection):
     name = "main"
+
     def createActions(self, parent=None):
         self.file_new = QAction(parent)
         self.file_open = QAction(parent)
@@ -1302,7 +1302,7 @@ class ActionCollection(actioncollection.ActionCollection):
         self.edit_copy.setShortcuts(QKeySequence.Copy)
         self.edit_paste.setShortcuts(QKeySequence.Paste)
         self.edit_select_all.setShortcuts(QKeySequence.SelectAll)
-        self.edit_select_current_toplevel.setShortcut(QKeySequence(Qt.SHIFT+Qt.CTRL+Qt.Key_B))
+        self.edit_select_current_toplevel.setShortcut(QKeySequence(Qt.SHIFT + Qt.CTRL + Qt.Key_B))
         self.edit_select_none.setShortcut(QKeySequence(Qt.SHIFT + Qt.CTRL + Qt.Key_A))
         self.edit_select_full_lines_up.setShortcut(QKeySequence(Qt.SHIFT + Qt.CTRL + Qt.Key_Up))
         self.edit_select_full_lines_down.setShortcut(QKeySequence(Qt.SHIFT + Qt.CTRL + Qt.Key_Down))
