@@ -1,0 +1,16 @@
+extension-name: WinDarkTheme
+short-description: Dark theme for Frescobaldi
+description: <
+  This extension template is a minimal working Frescobaldi extension
+  and can be used to build upon. It provides stubs for all relevant
+  functionality and may serve as a “cheat sheet” for the integration
+  of extensions.
+  >
+version: 1.0.0
+api-version: 0.9.0
+maintainers: [
+  Mattia Marelli <sesquialtera87@gmail.com>
+  ]
+license: GPL3
+website: https://github.com/frescobaldi-extensions/boilerplate
+repository: https://github.com/frescobaldi-extensions/boilerplate.git
