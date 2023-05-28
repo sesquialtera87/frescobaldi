@@ -21,7 +21,6 @@
 The document outline tool widget.
 """
 
-
 from PyQt5.QtCore import QEvent, QTimer
 from PyQt5.QtGui import QBrush, QFont, QTextCursor
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
@@ -36,7 +35,7 @@ import documentstructure
 class Widget(QTreeWidget):
     def __init__(self, tool):
         super(Widget, self).__init__(tool,
-            headerHidden=True)
+                                     headerHidden=True)
         self._timer = QTimer(singleShot=True, timeout=self.updateView)
         tool.mainwindow().currentDocumentChanged.connect(self.slotCurrentDocumentChanged)
         self.itemClicked.connect(self.slotItemClicked)
@@ -65,6 +64,8 @@ class Widget(QTreeWidget):
 
     def updateView(self):
         """Recreate the items in the view."""
+        import time
+        t = time.time()
         with qutil.signalsBlocked(self):
             self.clear()
             doc = self.parent().mainwindow().currentDocument()
@@ -144,6 +145,7 @@ class Widget(QTreeWidget):
                     current_item = item
             if current_item:
                 self.scrollToItem(current_item)
+        print("DEFAULT ->> " + str(time.time() - t))
 
     def cursorForItem(self, item):
         """Returns a cursor for the specified item.
@@ -192,5 +194,3 @@ class Widget(QTreeWidget):
         """Called when a tool tip for the specified item needs to be shown."""
         import documenttooltip
         documenttooltip.show(self.cursorForItem(item))
-
-
