@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QTreeWidgetItem, QTreeWidget
 
 path = r'G:\Il mio Drive\Frescobaldi Projects\Rusca\Missa A19-21'
 file = os.path.join(path, 'credo.ly')
-# file = os.path.join(path, 'missa.ly')
+file = os.path.join(path, 'missa.ly')
 
 text = ''
 
@@ -31,35 +31,25 @@ class EnclosingBlock:
     def check(self, char):
         if self.start == char:
             self.start_count += 1
-            # print(f'[{char}] -> {self.excess()}')
+            print(f'[{char}] -> {self.excess()}')
             return True
         elif self.end == char:
             self.end_count += 1
-            # print(f'[{char}] -> {self.excess()}')
+            print(f'[{char}] -> {self.excess()}')
             return True
 
 
 class Matcher:
     def __init__(self, regex, start: str, end: str, name: str, leaf=False, capture=False):
-        self.result: re.Match
-        self.rx = re.compile(regex, flags=re.MULTILINE)
+        self.result = None
+        self.rx = re.compile(regex)
         self.block = EnclosingBlock(start, end, name)
         self.leaf = leaf
         self.capture = capture
 
-        if capture:
-            matches = re.findall('\?P<\w+>', regex)
-            if matches:
-                self.group_name = matches[0][3:-1]
-            else:
-                self.group_name = None
-
     def text(self):
         if self.capture and self.result:
-            if self.group_name:
-                return self.result.group(self.group_name)
-            else:
-                return self.result.group()
+            return self.result.group()
         else:
             return self.block.name
 
@@ -68,13 +58,26 @@ class Matcher:
         return self.result
 
 
-def structure(root: QTreeWidget, text: str):
+rx = {
+    'paper': Matcher(r'\\paper\s*{', '{', '}', 'PAPER'),
+    'header': Matcher(r'\\header\s*{', '{', '}', 'HEADER'),
+    'layout': Matcher(r'\\layout\s*{', '{', '}', 'LAYOUT'),
+    'book-part': Matcher(r'\\bookpart\s*{', '{', '}', 'BOOK-PART'),
+    'context': Matcher(r'\\context\s*{', '{', '}', 'CONTEXT'),
+    'score': Matcher(r'\\score\s*{', '{', '}', 'SCORE'),
+    'variable': Matcher(r'[a-zA-Z]+\s*=', '', '', 'Variable', leaf=True, capture=True),
+
+    # 'figure-mode': Matcher(r'\\figuremode\s*{', '{', '}', 'FigureMode'),
+}
+
+
+def structure(tree: QTreeWidget):
     t = time.time()
     L = len(text)
     i = 0
     updated = False
     queue = []
-    items = []
+    items = [QTreeWidgetItem(tree)]
 
     while i < L:
         char = text[i]
@@ -87,7 +90,7 @@ def structure(root: QTreeWidget, text: str):
                 if last_block.excess() == 0:
                     queue.remove(last_block)
                     items.remove(items[-1])
-                    # print("CLOSING " + last_block.name)
+                    print("CLOSING " + last_block.name)
                 if c:
                     break
 
@@ -97,11 +100,7 @@ def structure(root: QTreeWidget, text: str):
                 new_block = matcher.block.copy()
                 it = QTreeWidgetItem()
                 it.setText(0, matcher.text())
-
-                if items:
-                    items[-1].addChild(it)
-                else:
-                    root.addTopLevelItem(it)
+                items[-1].addChild(it)
 
                 if not matcher.leaf:
                     queue.append(new_block)
@@ -109,6 +108,7 @@ def structure(root: QTreeWidget, text: str):
 
                 i = m.end()
                 updated = True
+                print(m)
                 break
 
         if not updated:
@@ -116,20 +116,4 @@ def structure(root: QTreeWidget, text: str):
             updated = False
 
     print(time.time() - t)
-
-
-rx = {
-    'paper': Matcher(r'\\paper\s*{', '{', '}', 'PAPER'),
-    'header': Matcher(r'\\header\s*{', '{', '}', 'HEADER'),
-    'layout': Matcher(r'\\layout\s*{', '{', '}', 'Layout'),
-    'book-part': Matcher(r'\\bookpart\s*{', '{', '}', 'BOOK-PART'),
-    'book': Matcher(r'\\book\s*{', '{', '}', 'BOOK'),
-    'context': Matcher(r'\\context\s*{', '{', '}', 'Context'),
-    'score': Matcher(r'\\score\s*{', '{', '}', 'Score'),
-    'variable': Matcher(r'^\s*(?P<name>[a-zA-Z]+)\s*=', '', '', 'Variable', leaf=True, capture=True),
-    # 'line-comment': Matcher(r'%.*$', '', '', 'Comment', leaf=True),
-    'include': Matcher(r'^\s*\\include \"[^\"]+\"', '', '', 'Include', leaf=True),
-    'new': Matcher(r'\\new\s+(?P<name>[A-Z]\w+)', '', '', 'NEW', leaf=True, capture=True),
-
-    # 'figure-mode': Matcher(r'\\figuremode\s*{', '{', '}', 'FigureMode'),
-}
+    print(items)
